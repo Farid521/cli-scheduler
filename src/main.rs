@@ -1,6 +1,8 @@
-use std::{env, vec};
+use std::{env};
 use std::error::Error;
 
+mod connection;
+mod server;
 pub struct SchedulerOptions {
     time_start: i16,
     time_end: i16,
@@ -24,10 +26,22 @@ impl SchedulerOptions {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let commands_args: Vec<String> = env::args().collect();
-    
-    if commands_args[1] == "sch" {
+
+    if commands_args.len() < 2 {
+        return Err("no command option have been passed".into());
+    }
+
+    let command_option = &commands_args[1];
+
+    if command_option == "sch" {
         let schedule = SchedulerOptions::create_schedule(&commands_args)?;
         println!("{} scheduled at: {} - {}", schedule.name, schedule.time_start, schedule.time_end);
+    }
+    else if command_option == "test_auth" {
+        connection::login_redirect();
+    }
+    else if  command_option == "test_server"{
+        server::create_server();
     }
     Ok(())
 }
