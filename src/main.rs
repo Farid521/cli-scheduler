@@ -38,10 +38,17 @@ fn run() -> Result<(), Box<dyn Error>> {
         println!("{} scheduled at: {} - {}", schedule.name, schedule.time_start, schedule.time_end);
     }
     else if command_option == "test_auth" {
+        server::create_server()?;
         connection::login_redirect();
+        
+        // Keep the main thread alive to prevent server from dying
+        println!("Server is running. Press Ctrl+C to stop.");
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
     }
     else if  command_option == "test_server"{
-        server::create_server();
+        server::create_server()?;
     }
     Ok(())
 }

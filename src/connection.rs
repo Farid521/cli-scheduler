@@ -12,9 +12,6 @@ pub fn login_redirect() {
         redirect_uri,
         data_acces_scope
     );
-
-
-
     print!("opening browser");
     open::that(auth_url).unwrap();
 }
