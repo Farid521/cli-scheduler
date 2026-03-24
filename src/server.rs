@@ -30,20 +30,9 @@ fn handle_connection(mut stream: TcpStream) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn create_server() -> std::io::Result<()> {
-    thread::spawn(|| {
-        if let Err(e) = start_server() {
-            eprintln!("Server error: {}", e);
-        }
-    });
-
-    println!("tcp server started in background");
-    Ok(())
-}
-
 fn start_server() -> std::io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:8090")?;
-
+    
     for stream in listener.incoming() {
         match stream{
             Ok(stream) => {
@@ -54,5 +43,16 @@ fn start_server() -> std::io::Result<()> {
             Err(e) => println!("connection failed: {}", e),
         }
     }
+    Ok(())
+}
+
+pub fn create_server() -> std::io::Result<()> {
+    thread::spawn(|| {
+        if let Err(e) = start_server() {
+            eprintln!("Server error: {}", e);
+        }
+    });
+
+    println!("tcp server started in background");
     Ok(())
 }

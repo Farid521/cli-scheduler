@@ -30,7 +30,6 @@ fn run() -> Result<(), Box<dyn Error>> {
     if commands_args.len() < 2 {
         return Err("no command option have been passed".into());
     }
-
     let command_option = &commands_args[1];
 
     if command_option == "sch" {
@@ -39,7 +38,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
     else if command_option == "test_auth" {
         server::create_server()?;
-        connection::login_redirect();
+        let is_browser_open = connection::login_redirect();
+        match is_browser_open {
+            Ok(_) => println!("browser succesfully opened"),
+            Err(err) => println!("err when opening the browser. Err: {}", err),
+        }
         
         // Keep the main thread alive to prevent server from dying
         println!("Server is running. Press Ctrl+C to stop.");
@@ -54,6 +57,8 @@ fn run() -> Result<(), Box<dyn Error>> {
 }
 
 fn main() {
+    dotenvy::dotenv().ok();
+    
     if let Err(e) = run() {
         eprintln!("Application error: {}", e);
     }

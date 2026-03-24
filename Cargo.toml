@@ -14,3 +14,5 @@ open = "5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 urlencoding = "2"
+webbrowser = "1.2.0"
+dotenvy = "0.15"
