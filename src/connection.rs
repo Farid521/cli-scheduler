@@ -13,7 +13,7 @@ pub fn login_redirect() -> Result<(), Box<dyn Error>> {
         env::var("REDIRECT_URI")?,
         data_acces_scope
     );
-    print!("opening browser");
+    println!("opening browser");
 
     webbrowser::open(&auth_url)?;
     Ok(())

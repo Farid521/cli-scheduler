@@ -1,5 +1,6 @@
 use std::{env};
 use std::error::Error;
+use tokio::time::error;
 
 mod connection;
 mod server;
@@ -26,7 +27,6 @@ impl SchedulerOptions {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let commands_args: Vec<String> = env::args().collect();
-
     if commands_args.len() < 2 {
         return Err("no command option have been passed".into());
     }
@@ -37,18 +37,9 @@ fn run() -> Result<(), Box<dyn Error>> {
         println!("{} scheduled at: {} - {}", schedule.name, schedule.time_start, schedule.time_end);
     }
     else if command_option == "test_auth" {
-        server::create_server()?;
-        let is_browser_open = connection::login_redirect();
-        match is_browser_open {
-            Ok(_) => println!("browser succesfully opened"),
-            Err(err) => println!("err when opening the browser. Err: {}", err),
-        }
-        
-        // Keep the main thread alive to prevent server from dying
-        println!("Server is running. Press Ctrl+C to stop.");
-        loop {
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        }
+        connection::login_redirect()?;
+        println!("login redirected");
+        server::create_server()?; 
     }
     else if  command_option == "test_server"{
         server::create_server()?;
@@ -58,7 +49,6 @@ fn run() -> Result<(), Box<dyn Error>> {
 
 fn main() {
     dotenvy::dotenv().ok();
-    
     if let Err(e) = run() {
         eprintln!("Application error: {}", e);
     }
