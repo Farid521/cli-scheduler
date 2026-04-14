@@ -4,6 +4,7 @@ use tokio::time::error;
 
 mod connection;
 mod server;
+mod auth;
 pub struct SchedulerOptions {
     time_start: i16,
     time_end: i16,
@@ -38,7 +39,6 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
     else if command_option == "test_auth" {
         connection::login_redirect()?;
-        println!("login redirected");
         server::create_server()?; 
     }
     else if  command_option == "test_server"{

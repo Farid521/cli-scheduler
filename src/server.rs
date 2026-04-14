@@ -31,15 +31,27 @@ fn start_server() -> std::io::Result<()> {
     let (mut stream, _) = listener.accept()?;
     let mut stream_buff = [0; 4096];
     let n_buff = stream.read(&mut stream_buff)?;
-    let _request = String::from_utf8_lossy(&stream_buff[..n_buff]);
+    let request = String::from_utf8_lossy(&stream_buff[..n_buff]);
 
+    let code = request
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|path| {
+            path.split('?').nth(1)
+                .and_then(|query| {
+                    query.split('&').find(|p| p.starts_with("code="))
+                          .map(|p| p["code=".len()..].to_string())
+                })
+        });
 
     let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n\
-                    <h2>Authentication successful! You can close this tab.</h2>";
+                    <h2>Autentikasi sukses, kamu bisa tutup tab ini.</h2>";
 
     stream.write_all(response.as_bytes())?;  
     stream.flush()?;
 
+    println!("code: {:?}", code);
     Ok(())
 }
 
