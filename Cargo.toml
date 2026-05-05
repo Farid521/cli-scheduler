@@ -5,14 +5,12 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-anyhow = "1"
-tokio = { version = "1", features = ["full"] }
-reqwest = { version = "0.11", features = ["json"] }
-oauth2 = "4"
-tiny_http = "0.12"
-open = "5"
+reqwest = { version = "0.11", features = ["json", "blocking"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 urlencoding = "2"
 webbrowser = "1.2.0"
 dotenvy = "0.15"
+thiserror = "1"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5"

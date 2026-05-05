@@ -1,55 +1,112 @@
-use std::{env};
 use std::error::Error;
-use tokio::time::error;
+use clap::{Parser, Subcommand};
 
-mod connection;
+mod errors;
+mod browser;
 mod server;
 mod auth;
-pub struct SchedulerOptions {
-    time_start: i16,
-    time_end: i16,
-    name: String,
-    description: Option<String>,
+mod calendar;
+
+#[derive(Parser)]
+#[command(name = "cli-scheduler")]
+#[command(version = "0.2.0")]
+#[command(about = "CLI tool untuk mengelola jadwal di Google Calendar", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
 }
 
-impl SchedulerOptions {
-    fn create_schedule(args: &[String]) -> Result<Self, Box<dyn Error>> {
-        if args.len() < 4 {
-            return Err("Not enough arguments".into());
-        }
+#[derive(Subcommand)]
+enum Commands {
+    /// Login dan simpan token Google Calendar
+    Auth,
 
-        let time_start: i16 = args[2].parse()?;
-        let time_end = args[3].parse()?;
-        let name = args[4].clone();
+    /// Tambahkan event baru ke Google Calendar
+    Add {
+        /// Judul event
+        #[arg(short, long)]
+        title: String,
 
-        Ok(Self { time_start, time_end, name, description: None})
-    }
-}
+        /// Waktu mulai (format: 2026-05-10T09:00)
+        #[arg(short, long)]
+        start: String,
 
-fn run() -> Result<(), Box<dyn Error>> {
-    let commands_args: Vec<String> = env::args().collect();
-    if commands_args.len() < 2 {
-        return Err("no command option have been passed".into());
-    }
-    let command_option = &commands_args[1];
+        /// Waktu selesai (format: 2026-05-10T10:00)
+        #[arg(short, long)]
+        end: String,
 
-    if command_option == "sch" {
-        let schedule = SchedulerOptions::create_schedule(&commands_args)?;
-        println!("{} scheduled at: {} - {}", schedule.name, schedule.time_start, schedule.time_end);
-    }
-    else if command_option == "test_auth" {
-        connection::login_redirect()?;
-        server::create_server()?; 
-    }
-    else if  command_option == "test_server"{
-        server::create_server()?;
-    }
-    Ok(())
+        /// Deskripsi event (opsional)
+        #[arg(short, long)]
+        desc: Option<String>,
+    },
+
+    /// Tampilkan 10 event mendatang dari Google Calendar
+    List,
+
+    /// Hapus event berdasarkan ID
+    Delete {
+        /// ID event yang akan dihapus
+        id: String,
+    },
 }
 
 fn main() {
     dotenvy::dotenv().ok();
-    if let Err(e) = run() {
-        eprintln!("Application error: {}", e);
+    let cli = Cli::parse();
+
+    if let Err(e) = run(cli) {
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
     }
+}
+
+fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
+    match cli.command {
+        Commands::Auth => {
+            auth::start_auth_flow()?;
+        }
+
+        Commands::Add { title, start, end, desc } => {
+            let client = calendar::get_client()?;
+            let event = calendar::create_event(
+                &client,
+                &title,
+                &start,
+                &end,
+                desc.as_deref(),
+            )?;
+            println!("Event berhasil dibuat!");
+            println!("  Judul : {}", event.summary);
+            println!("  Mulai : {}", event.start.date_time.unwrap_or_default());
+            println!("  Selesai: {}", event.end.date_time.unwrap_or_default());
+            if let Some(id) = event.id {
+                println!("  ID    : {}", id);
+            }
+        }
+
+        Commands::List => {
+            let client = calendar::get_client()?;
+            let events = calendar::list_events(&client)?;
+
+            if events.is_empty() {
+                println!("Tidak ada event mendatang.");
+            } else {
+                println!("{:<40} {:<25} {}", "Judul", "Mulai", "ID");
+                println!("{}", "-".repeat(90));
+                for event in events {
+                    let start = event.start.date_time.unwrap_or_else(|| event.start.date.unwrap_or_default());
+                    let id = event.id.unwrap_or_else(|| "-".to_string());
+                    println!("{:<40} {:<25} {}", event.summary, start, id);
+                }
+            }
+        }
+
+        Commands::Delete { id } => {
+            let client = calendar::get_client()?;
+            calendar::delete_event(&client, &id)?;
+            println!("Event '{}' berhasil dihapus.", id);
+        }
+    }
+
+    Ok(())
 }
